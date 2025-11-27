@@ -11,5 +11,5 @@ data class CountryCovid(
     val newCases: Long,
     val totalDeaths: Long,
     val newDeaths: Long,
-    val lastUpdate: String  // Date of the most recent data
+    val lastUpdate: String, // Date of the most recent data
 )

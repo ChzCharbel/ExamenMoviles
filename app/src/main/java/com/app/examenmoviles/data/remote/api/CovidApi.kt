@@ -5,7 +5,6 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 interface CovidApi {
-
     /**
      * Fetches COVID-19 data for a specific country
      * @param country Country name (e.g., "United States", "Mexico", "Spain")
@@ -13,7 +12,7 @@ interface CovidApi {
      */
     @GET("v1/covid19")
     suspend fun getCountryCovidData(
-        @Query("country") country: String
+        @Query("country") country: String,
     ): List<CovidCountryDto>
 
     /**

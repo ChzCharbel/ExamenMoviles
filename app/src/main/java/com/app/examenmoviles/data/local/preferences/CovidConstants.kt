@@ -16,16 +16,17 @@ object CovidConstants {
     const val KEY_TOP_COUNTRIES_LIST = "top_countries_list"
 
     // Default top 10 countries to fetch
-    val DEFAULT_TOP_COUNTRIES = listOf(
-        "United States",
-        "India",
-        "Brazil",
-        "France",
-        "Germany",
-        "United Kingdom",
-        "Italy",
-        "Spain",
-        "Canada",
-        "Mexico"
-    )
+    val DEFAULT_TOP_COUNTRIES =
+        listOf(
+            "United States",
+            "India",
+            "Brazil",
+            "France",
+            "Germany",
+            "United Kingdom",
+            "Italy",
+            "Spain",
+            "Canada",
+            "Mexico",
+        )
 }

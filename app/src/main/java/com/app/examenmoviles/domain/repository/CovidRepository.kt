@@ -7,7 +7,6 @@ import com.app.examenmoviles.domain.model.CountryCovid
  * Defines the contract for fetching COVID data
  */
 interface CovidRepository {
-
     /**
      * Fetches COVID data for the top countries
      * Uses cache if available and valid, otherwise fetches from API

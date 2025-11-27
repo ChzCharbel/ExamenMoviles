@@ -7,7 +7,6 @@ import com.app.examenmoviles.domain.model.CountryCovid
  * Mapper to convert from data layer DTOs to domain models
  */
 object CovidMapper {
-
     /**
      * Converts a CovidCountryDto to a CountryCovid domain model
      * Extracts the most recent date's data from the cases/deaths maps
@@ -35,14 +34,12 @@ object CovidMapper {
             newCases = newCases,
             totalDeaths = totalDeaths,
             newDeaths = newDeaths,
-            lastUpdate = lastUpdate
+            lastUpdate = lastUpdate,
         )
     }
 
     /**
      * Converts a list of CovidCountryDto to a list of CountryCovid
      */
-    fun List<CovidCountryDto>.toDomainList(): List<CountryCovid> {
-        return map { it.toDomain() }
-    }
+    fun List<CovidCountryDto>.toDomainList(): List<CountryCovid> = map { it.toDomain() }
 }

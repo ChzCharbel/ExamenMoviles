@@ -19,15 +19,12 @@ import com.google.gson.annotations.SerializedName
 data class CovidCountryDto(
     @SerializedName("country")
     val country: String,
-
     @SerializedName("region")
     val region: String?,
-
     @SerializedName("cases")
     val cases: Map<String, CaseData>?,
-
     @SerializedName("deaths")
-    val deaths: Map<String, CaseData>?
+    val deaths: Map<String, CaseData>?,
 )
 
 /**
@@ -36,7 +33,6 @@ data class CovidCountryDto(
 data class CaseData(
     @SerializedName("total")
     val total: Long,
-
     @SerializedName("new")
-    val new: Long
+    val new: Long,
 )

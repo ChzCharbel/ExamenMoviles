@@ -7,7 +7,7 @@ import com.app.examenmoviles.domain.model.CountryCovid
  */
 data class CovidCache(
     val data: List<CountryCovid>,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
 ) {
     /**
      * Checks if the cache is still valid based on the validity duration
