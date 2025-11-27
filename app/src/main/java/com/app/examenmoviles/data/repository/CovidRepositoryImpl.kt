@@ -2,6 +2,7 @@ package com.app.examenmoviles.data.repository
 
 import com.app.examenmoviles.data.local.preferences.CovidConstants
 import com.app.examenmoviles.data.local.preferences.CovidPreferences
+import com.app.examenmoviles.data.mapper.CovidMapper
 import com.app.examenmoviles.data.mapper.CovidMapper.toDomain
 import com.app.examenmoviles.data.remote.api.CovidApi
 import com.app.examenmoviles.domain.model.CountryCovid
@@ -45,6 +46,7 @@ class CovidRepositoryImpl
         /**
          * Fetches a specific country's data
          * Strategy: Check cache first, if invalid or missing, fetch from API
+         * Fetches both cases and deaths data separately and merges them
          */
         override suspend fun getCountryData(country: String): Result<CountryCovid> {
             return try {
@@ -54,15 +56,25 @@ class CovidRepositoryImpl
                     return Result.success(cachedData.data.first())
                 }
 
-                // Cache is invalid or missing, fetch from API
-                val response = api.getCountryCovidData(country)
+                // Cache is invalid or missing, fetch both cases and deaths from API
+                val casesResponse =
+                    try {
+                        api.getCountryCovidData(country, type = "cases").firstOrNull()
+                    } catch (e: Exception) {
+                        null
+                    }
 
-                if (response.isEmpty()) {
-                    return Result.failure(Exception("No data found for country: $country"))
-                }
+                val deathsResponse =
+                    try {
+                        api.getCountryCovidData(country, type = "deaths").firstOrNull()
+                    } catch (e: Exception) {
+                        null
+                    }
 
-                // Convert to domain model
-                val domainData = response.first().toDomain()
+                // Merge the data
+                val domainData =
+                    CovidMapper.mergeCasesAndDeaths(casesResponse, deathsResponse)
+                        ?: return Result.failure(Exception("No data found for country: $country"))
 
                 // Save to cache
                 preferences.saveCountryData(country, domainData)

@@ -39,6 +39,47 @@ object CovidMapper {
     }
 
     /**
+     * Merges cases and deaths data from two API responses into a single CountryCovid
+     * @param casesDto DTO with cases data
+     * @param deathsDto DTO with deaths data
+     */
+    fun mergeCasesAndDeaths(
+        casesDto: CovidCountryDto?,
+        deathsDto: CovidCountryDto?,
+    ): CountryCovid? {
+        // Need at least one of them
+        if (casesDto == null && deathsDto == null) return null
+
+        val country = casesDto?.country ?: deathsDto?.country ?: return null
+        val region = casesDto?.region ?: deathsDto?.region ?: ""
+
+        // Extract cases data
+        val latestCaseDate = casesDto?.cases?.keys?.maxOrNull()
+        val latestCaseData = latestCaseDate?.let { casesDto.cases?.get(it) }
+        val totalCases = latestCaseData?.total ?: 0L
+        val newCases = latestCaseData?.new ?: 0L
+
+        // Extract deaths data
+        val latestDeathDate = deathsDto?.deaths?.keys?.maxOrNull()
+        val latestDeathData = latestDeathDate?.let { deathsDto.deaths?.get(it) }
+        val totalDeaths = latestDeathData?.total ?: 0L
+        val newDeaths = latestDeathData?.new ?: 0L
+
+        // Use the most recent date from either cases or deaths
+        val lastUpdate = latestCaseDate ?: latestDeathDate ?: "Unknown"
+
+        return CountryCovid(
+            country = country,
+            region = region,
+            totalCases = totalCases,
+            newCases = newCases,
+            totalDeaths = totalDeaths,
+            newDeaths = newDeaths,
+            lastUpdate = lastUpdate,
+        )
+    }
+
+    /**
      * Converts a list of CovidCountryDto to a list of CountryCovid
      */
     fun List<CovidCountryDto>.toDomainList(): List<CountryCovid> = map { it.toDomain() }
