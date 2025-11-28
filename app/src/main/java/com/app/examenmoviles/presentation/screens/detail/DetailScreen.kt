@@ -1,5 +1,6 @@
 package com.app.examenmoviles.presentation.screens.detail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -244,6 +246,157 @@ private fun DetailContent(
                     )
                 }
             }
+        }
+
+        // Pie Chart Section
+        CasesVsDeathsPieChart(
+            totalCases = country.totalCases,
+            totalDeaths = country.totalDeaths
+        )
+    }
+}
+
+@Composable
+private fun CasesVsDeathsPieChart(
+    totalCases: Long,
+    totalDeaths: Long,
+    modifier: Modifier = Modifier
+) {
+    val casesColor = Color(0xFF2196F3) // Blue for cases
+    val deathsColor = Color(0xFFE53935) // Red for deaths
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(
+                text = "Cases vs Deaths Distribution",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            // Legend
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                LegendItem(
+                    color = casesColor,
+                    label = "Total Cases",
+                    value = totalCases.formatNumber()
+                )
+                LegendItem(
+                    color = deathsColor,
+                    label = "Total Deaths",
+                    value = totalDeaths.formatNumber()
+                )
+            }
+
+            // Simple Pie Chart using Box and Canvas
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.foundation.Canvas(
+                    modifier = Modifier.size(180.dp)
+                ) {
+                    val total = totalCases.toFloat()
+                    val deathsPercentage = if (total > 0) (totalDeaths.toFloat() / total) * 360f else 0f
+                    val casesPercentage = 360f - deathsPercentage
+
+                    // Draw Deaths slice (starting from top, going clockwise)
+                    drawArc(
+                        color = deathsColor,
+                        startAngle = -90f,
+                        sweepAngle = deathsPercentage,
+                        useCenter = true
+                    )
+
+                    // Draw Cases slice
+                    drawArc(
+                        color = casesColor,
+                        startAngle = -90f + deathsPercentage,
+                        sweepAngle = casesPercentage,
+                        useCenter = true
+                    )
+                }
+            }
+
+            // Percentage Display
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                val total = totalCases.toFloat()
+                val deathRate = if (total > 0) (totalDeaths.toFloat() / total) * 100 else 0f
+                val survivalRate = 100f - deathRate
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = String.format("%.2f%%", survivalRate),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = casesColor
+                    )
+                    Text(
+                        text = "Cases",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = String.format("%.2f%%", deathRate),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = deathsColor
+                    )
+                    Text(
+                        text = "Deaths",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegendItem(
+    color: Color,
+    label: String,
+    value: String
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(16.dp)
+                .background(color, shape = RoundedCornerShape(4.dp))
+        )
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
