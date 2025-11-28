@@ -16,12 +16,16 @@ class GetCountryCovidList
         /**
          * Fetches the top countries list with COVID data
          * @param forceRefresh If true, bypasses cache and fetches fresh data from API
+         * @param date Optional date in YYYY-MM-DD format (e.g., "2023-01-15")
          * @return Result containing list of CountryCovid or an error
          */
-        suspend operator fun invoke(forceRefresh: Boolean = false): Result<List<CountryCovid>> =
+        suspend operator fun invoke(
+            forceRefresh: Boolean = false,
+            date: String? = null,
+        ): Result<List<CountryCovid>> =
             if (forceRefresh) {
-                repository.refreshTopCountries()
+                repository.refreshTopCountries(date)
             } else {
-                repository.getTopCountries()
+                repository.getTopCountries(date)
             }
     }

@@ -22,6 +22,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.examenmoviles.domain.model.CountryCovid
+import com.app.examenmoviles.presentation.common.components.CovidDatePickerDialog
+import com.app.examenmoviles.presentation.common.components.DateFilterBar
 import com.app.examenmoviles.presentation.screens.home.components.CountryListTab
 import com.app.examenmoviles.presentation.screens.home.components.SearchTab
 
@@ -53,6 +55,13 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
+            // Date Filter Bar
+            DateFilterBar(
+                selectedDate = uiState.selectedDate,
+                onDateClick = { viewModel.showDatePicker() },
+                onClearDate = { viewModel.clearDateFilter() },
+            )
+
             // Tab Row
             TabRow(
                 selectedTabIndex = uiState.selectedTabIndex,
@@ -107,6 +116,16 @@ fun HomeScreen(
                     )
                 }
             }
+        }
+
+        // Date Picker Dialog
+        if (uiState.showDatePicker) {
+            CovidDatePickerDialog(
+                onDateSelected = { date ->
+                    viewModel.onDateSelected(date)
+                },
+                onDismiss = { viewModel.hideDatePicker() },
+            )
         }
     }
 }

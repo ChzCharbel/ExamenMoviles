@@ -49,7 +49,7 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
-            getCountryCovidData(countryName)
+            getCountryCovidData(countryName, date = _uiState.value.selectedDate)
                 .onSuccess { country ->
                     _uiState.update {
                         it.copy(
@@ -68,5 +68,35 @@ class DetailViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    /**
+     * Shows the date picker dialog
+     */
+    fun showDatePicker() {
+        _uiState.update { it.copy(showDatePicker = true) }
+    }
+
+    /**
+     * Hides the date picker dialog
+     */
+    fun hideDatePicker() {
+        _uiState.update { it.copy(showDatePicker = false) }
+    }
+
+    /**
+     * Updates the selected date and refreshes data
+     * @param date Date in YYYY-MM-DD format, or null to clear the filter
+     */
+    fun onDateSelected(date: String?) {
+        _uiState.update { it.copy(selectedDate = date, showDatePicker = false) }
+        loadCountryData()
+    }
+
+    /**
+     * Clears the date filter
+     */
+    fun clearDateFilter() {
+        onDateSelected(null)
     }
 }

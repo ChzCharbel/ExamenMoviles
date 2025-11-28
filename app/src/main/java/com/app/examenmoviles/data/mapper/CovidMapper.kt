@@ -42,10 +42,12 @@ object CovidMapper {
      * Merges cases and deaths data from two API responses into a single CountryCovid
      * @param casesDto DTO with cases data
      * @param deathsDto DTO with deaths data
+     * @param requestedDate The specific date that was requested (if any)
      */
     fun mergeCasesAndDeaths(
         casesDto: CovidCountryDto?,
         deathsDto: CovidCountryDto?,
+        requestedDate: String? = null,
     ): CountryCovid? {
         // Need at least one of them
         if (casesDto == null && deathsDto == null) return null
@@ -54,18 +56,30 @@ object CovidMapper {
         val region = casesDto?.region ?: deathsDto?.region ?: ""
 
         // Extract cases data
-        val latestCaseDate = casesDto?.cases?.keys?.maxOrNull()
-        val latestCaseData = latestCaseDate?.let { casesDto.cases?.get(it) }
+        // If a specific date was requested, try to find it in the map
+        // Otherwise, use the latest date available
+        val latestCaseDate = if (requestedDate != null && casesDto?.cases?.containsKey(requestedDate) == true) {
+            requestedDate
+        } else {
+            casesDto?.cases?.keys?.lastOrNull()
+        }
+        val latestCaseData = latestCaseDate?.let { casesDto?.cases?.get(it) }
         val totalCases = latestCaseData?.total ?: 0L
         val newCases = latestCaseData?.new ?: 0L
 
         // Extract deaths data
-        val latestDeathDate = deathsDto?.deaths?.keys?.maxOrNull()
-        val latestDeathData = latestDeathDate?.let { deathsDto.deaths?.get(it) }
+        // If a specific date was requested, try to find it in the map
+        // Otherwise, use the latest date available
+        val latestDeathDate = if (requestedDate != null && deathsDto?.deaths?.containsKey(requestedDate) == true) {
+            requestedDate
+        } else {
+            deathsDto?.deaths?.keys?.lastOrNull()
+        }
+        val latestDeathData = latestDeathDate?.let { deathsDto?.deaths?.get(it) }
         val totalDeaths = latestDeathData?.total ?: 0L
         val newDeaths = latestDeathData?.new ?: 0L
 
-        // Use the most recent date from either cases or deaths
+        // Use the date from the cases or deaths data
         val lastUpdate = latestCaseDate ?: latestDeathDate ?: "Unknown"
 
         return CountryCovid(

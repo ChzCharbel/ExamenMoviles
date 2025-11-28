@@ -27,9 +27,15 @@ class CovidRepositoryImpl
         /**
          * Fetches top countries data
          * Strategy: Check cache first, if invalid or missing, fetch from API
+         * @param date Optional date in YYYY-MM-DD format
          */
-        override suspend fun getTopCountries(): Result<List<CountryCovid>> {
+        override suspend fun getTopCountries(date: String?): Result<List<CountryCovid>> {
             return try {
+                // If date is specified, always fetch from API (don't use cache)
+                if (date != null) {
+                    return fetchTopCountriesFromApi(date)
+                }
+
                 // Check cache first
                 val cachedData = preferences.getTopCountries()
                 if (cachedData != null && cachedData.isValid(CovidConstants.CACHE_VALIDITY_DURATION)) {
@@ -37,7 +43,7 @@ class CovidRepositoryImpl
                 }
 
                 // Cache is invalid or missing, fetch from API
-                fetchTopCountriesFromApi()
+                fetchTopCountriesFromApi(null)
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -47,37 +53,46 @@ class CovidRepositoryImpl
          * Fetches a specific country's data
          * Strategy: Check cache first, if invalid or missing, fetch from API
          * Fetches both cases and deaths data separately and merges them
+         * @param date Optional date in YYYY-MM-DD format
          */
-        override suspend fun getCountryData(country: String): Result<CountryCovid> {
+        override suspend fun getCountryData(
+            country: String,
+            date: String?,
+        ): Result<CountryCovid> {
             return try {
-                // Check cache first
-                val cachedData = preferences.getCountryData(country)
-                if (cachedData != null && cachedData.isValid(CovidConstants.CACHE_VALIDITY_DURATION)) {
-                    return Result.success(cachedData.data.first())
+                // If date is specified, always fetch from API (don't use cache)
+                if (date == null) {
+                    // Check cache first
+                    val cachedData = preferences.getCountryData(country)
+                    if (cachedData != null && cachedData.isValid(CovidConstants.CACHE_VALIDITY_DURATION)) {
+                        return Result.success(cachedData.data.first())
+                    }
                 }
 
                 // Cache is invalid or missing, fetch both cases and deaths from API
                 val casesResponse =
                     try {
-                        api.getCountryCovidData(country, type = "cases").firstOrNull()
+                        api.getCountryCovidData(country, type = "cases", date = date).firstOrNull()
                     } catch (e: Exception) {
                         null
                     }
 
                 val deathsResponse =
                     try {
-                        api.getCountryCovidData(country, type = "deaths").firstOrNull()
+                        api.getCountryCovidData(country, type = "deaths", date = date).firstOrNull()
                     } catch (e: Exception) {
                         null
                     }
 
                 // Merge the data
                 val domainData =
-                    CovidMapper.mergeCasesAndDeaths(casesResponse, deathsResponse)
+                    CovidMapper.mergeCasesAndDeaths(casesResponse, deathsResponse, date)
                         ?: return Result.failure(Exception("No data found for country: $country"))
 
-                // Save to cache
-                preferences.saveCountryData(country, domainData)
+                // Save to cache only if no date specified
+                if (date == null) {
+                    preferences.saveCountryData(country, domainData)
+                }
 
                 Result.success(domainData)
             } catch (e: Exception) {
@@ -88,8 +103,10 @@ class CovidRepositoryImpl
         /**
          * Forces a refresh of top countries data from API
          * Bypasses cache completely
+         * @param date Optional date in YYYY-MM-DD format
          */
-        override suspend fun refreshTopCountries(): Result<List<CountryCovid>> = fetchTopCountriesFromApi()
+        override suspend fun refreshTopCountries(date: String?): Result<List<CountryCovid>> =
+            fetchTopCountriesFromApi(date)
 
         /**
          * Clears all cached data
@@ -101,8 +118,9 @@ class CovidRepositoryImpl
         /**
          * Private helper to fetch top countries from API
          * Makes parallel API calls for better performance
+         * @param date Optional date in YYYY-MM-DD format
          */
-        private suspend fun fetchTopCountriesFromApi(): Result<List<CountryCovid>> =
+        private suspend fun fetchTopCountriesFromApi(date: String?): Result<List<CountryCovid>> =
             try {
                 // Use coroutineScope to make parallel API calls for top countries
                 val countriesData =
@@ -111,12 +129,23 @@ class CovidRepositoryImpl
                             .map { countryName ->
                                 async {
                                     try {
-                                        val response = api.getCountryCovidData(countryName)
-                                        if (response.isNotEmpty()) {
-                                            response.first().toDomain()
-                                        } else {
-                                            null
-                                        }
+                                        // Fetch both cases and deaths data
+                                        val casesResponse =
+                                            try {
+                                                api.getCountryCovidData(countryName, type = "cases", date = date).firstOrNull()
+                                            } catch (e: Exception) {
+                                                null
+                                            }
+
+                                        val deathsResponse =
+                                            try {
+                                                api.getCountryCovidData(countryName, type = "deaths", date = date).firstOrNull()
+                                            } catch (e: Exception) {
+                                                null
+                                            }
+
+                                        // Merge the data
+                                        CovidMapper.mergeCasesAndDeaths(casesResponse, deathsResponse, date)
                                     } catch (e: Exception) {
                                         null // Skip countries that fail
                                     }
@@ -128,8 +157,8 @@ class CovidRepositoryImpl
                 // Take only the first 10 valid results
                 val topCountries = countriesData.take(10)
 
-                // Save to cache
-                if (topCountries.isNotEmpty()) {
+                // Save to cache only if no date specified
+                if (topCountries.isNotEmpty() && date == null) {
                     preferences.saveTopCountries(topCountries)
                 }
 

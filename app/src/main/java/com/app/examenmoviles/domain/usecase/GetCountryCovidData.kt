@@ -16,14 +16,18 @@ class GetCountryCovidData
         /**
          * Fetches COVID data for a specific country
          * @param country Name of the country to fetch data for
+         * @param date Optional date in YYYY-MM-DD format (e.g., "2023-01-15")
          * @return Result containing CountryCovid data or an error
          */
-        suspend operator fun invoke(country: String): Result<CountryCovid> {
+        suspend operator fun invoke(
+            country: String,
+            date: String? = null,
+        ): Result<CountryCovid> {
             // Validate input
             if (country.isBlank()) {
                 return Result.failure(IllegalArgumentException("Country name cannot be empty"))
             }
 
-            return repository.getCountryData(country.trim())
+            return repository.getCountryData(country.trim(), date)
         }
     }

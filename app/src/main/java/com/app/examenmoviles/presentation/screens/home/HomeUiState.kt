@@ -22,5 +22,9 @@ data class HomeUiState(
     val selectedTabIndex: Int = 0,
 
     // Pull-to-refresh state
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+
+    // Date filtering state
+    val selectedDate: String? = null, // Selected date in YYYY-MM-DD format
+    val showDatePicker: Boolean = false,
 )

@@ -9,5 +9,7 @@ import com.app.examenmoviles.domain.model.CountryCovid
 data class DetailUiState(
     val country: CountryCovid? = null,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val selectedDate: String? = null, // Selected date in YYYY-MM-DD format
+    val showDatePicker: Boolean = false,
 )

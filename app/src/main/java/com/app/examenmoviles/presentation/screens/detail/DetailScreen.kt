@@ -35,6 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.examenmoviles.domain.model.CountryCovid
+import com.app.examenmoviles.presentation.common.components.CovidDatePickerDialog
+import com.app.examenmoviles.presentation.common.components.DateFilterBar
 import com.app.examenmoviles.presentation.common.components.ErrorView
 import java.text.NumberFormat
 import java.util.Locale
@@ -69,40 +71,62 @@ fun DetailScreen(
         },
         modifier = modifier
     ) { paddingValues ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when {
-                // Loading state
-                uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp)
+            // Date Filter Bar
+            DateFilterBar(
+                selectedDate = uiState.selectedDate,
+                onDateClick = { viewModel.showDatePicker() },
+                onClearDate = { viewModel.clearDateFilter() },
+            )
+
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                when {
+                    // Loading state
+                    uiState.isLoading -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+
+                    // Error state
+                    uiState.error != null -> {
+                        ErrorView(
+                            message = uiState.error!!,
+                            onRetry = { viewModel.loadCountryData() }
+                        )
+                    }
+
+                    // Success state
+                    uiState.country != null -> {
+                        DetailContent(
+                            country = uiState.country!!,
+                            selectedDate = uiState.selectedDate,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
-
-                // Error state
-                uiState.error != null -> {
-                    ErrorView(
-                        message = uiState.error!!,
-                        onRetry = { viewModel.loadCountryData() }
-                    )
-                }
-
-                // Success state
-                uiState.country != null -> {
-                    DetailContent(
-                        country = uiState.country!!,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
             }
+        }
+
+        // Date Picker Dialog
+        if (uiState.showDatePicker) {
+            CovidDatePickerDialog(
+                onDateSelected = { date ->
+                    viewModel.onDateSelected(date)
+                },
+                onDismiss = { viewModel.hideDatePicker() },
+            )
         }
     }
 }
@@ -110,6 +134,7 @@ fun DetailScreen(
 @Composable
 private fun DetailContent(
     country: CountryCovid,
+    selectedDate: String?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -181,19 +206,43 @@ private fun DetailContent(
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = "Last Updated",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = country.lastUpdate,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                // Date Consulted
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Date Consulted:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = selectedDate ?: "Latest",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Last Updated (from API data)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Data Date:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = country.lastUpdate,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }

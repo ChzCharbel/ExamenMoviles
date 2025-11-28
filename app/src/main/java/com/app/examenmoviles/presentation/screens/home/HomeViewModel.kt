@@ -42,7 +42,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingTopCountries = true, topCountriesError = null) }
 
-            getCountryCovidList(forceRefresh = false)
+            getCountryCovidList(forceRefresh = false, date = _uiState.value.selectedDate)
                 .onSuccess { countries ->
                     _uiState.update {
                         it.copy(
@@ -71,7 +71,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true, topCountriesError = null) }
 
-            getCountryCovidList(forceRefresh = true)
+            getCountryCovidList(forceRefresh = true, date = _uiState.value.selectedDate)
                 .onSuccess { countries ->
                     _uiState.update {
                         it.copy(
@@ -128,7 +128,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true, searchError = null) }
 
-            getCountryCovidData(countryName)
+            getCountryCovidData(countryName, date = _uiState.value.selectedDate)
                 .onSuccess { country ->
                     _uiState.update {
                         it.copy(
@@ -170,5 +170,69 @@ class HomeViewModel @Inject constructor(
             )
         }
         searchJob?.cancel()
+    }
+
+    /**
+     * Shows the date picker dialog
+     */
+    fun showDatePicker() {
+        _uiState.update { it.copy(showDatePicker = true) }
+    }
+
+    /**
+     * Hides the date picker dialog
+     */
+    fun hideDatePicker() {
+        _uiState.update { it.copy(showDatePicker = false) }
+    }
+
+    /**
+     * Updates the selected date and refreshes data
+     * @param date Date in YYYY-MM-DD format, or null to clear the filter
+     */
+    fun onDateSelected(date: String?) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(selectedDate = date, showDatePicker = false) }
+
+            // Refresh data with the new date filter
+            when (_uiState.value.selectedTabIndex) {
+                0 -> {
+                    // Country List tab - force refresh with the new date
+                    _uiState.update { it.copy(isLoadingTopCountries = true, topCountriesError = null) }
+
+                    getCountryCovidList(forceRefresh = true, date = date)
+                        .onSuccess { countries ->
+                            _uiState.update {
+                                it.copy(
+                                    topCountries = countries,
+                                    isLoadingTopCountries = false,
+                                    topCountriesError = null
+                                )
+                            }
+                        }
+                        .onFailure { error ->
+                            _uiState.update {
+                                it.copy(
+                                    isLoadingTopCountries = false,
+                                    topCountriesError = error.message ?: "Failed to load countries"
+                                )
+                            }
+                        }
+                }
+                1 -> {
+                    // Search tab - re-search if there's a query
+                    if (_uiState.value.searchQuery.isNotBlank()) {
+                        searchCountry(_uiState.value.searchQuery)
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Clears the date filter
+     */
+    fun clearDateFilter() {
+        onDateSelected(null)
     }
 }
